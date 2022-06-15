@@ -57,7 +57,7 @@ where dense_rank < 4
 order by number desc;
 
 --
--- вывести города с количеством активных и неактивных клиентов (активный — customer.active = 1).
+-- 6. вывести города с количеством активных и неактивных клиентов (активный — customer.active = 1).
 -- Отсортировать по количеству неактивных клиентов по убыванию.(limit поставил, чтоб консоль не засоряло)
 --
 
@@ -72,13 +72,12 @@ order by number_inactive desc
 limit 50;
 
 --
--- Вывести категорию фильмов, у которой самое большое кол-во часов суммарной аренды в городах
+-- 7. Вывести категорию фильмов, у которой самое большое кол-во часов суммарной аренды в городах
 -- (customer.address_id в этом city), и которые начинаются на букву “a”.
 -- То же самое сделать для городов в которых есть символ “-”. Написать все в одном запросе.
 --
 
-select name, hours_a, hours_minus from
-( select category.name,
+with t as ( select category.name,
 sum(film.rental_duration) filter (where city.city like 'A%') as hours_a,
 sum(film.rental_duration) filter (where city.city like '%-%') as hours_minus from film
 join film_category on film.film_id = film_category.film_id
@@ -88,28 +87,6 @@ join rental on inventory.inventory_id = rental.inventory_id
 join customer on rental.customer_id = customer.customer_id
 full outer join address on customer.address_id = address.address_id
 join city on address.city_id = city.city_id
-group by category.name) as t
-where t.hours_a = (select max(hours_a) as max_for_a from(select category.name,
-                        sum(film.rental_duration) filter (where city.city like 'A%') as hours_a
-                        from film
-                        join film_category on film.film_id = film_category.film_id
-                        join category on film_category.category_id = category.category_id
-                        join inventory on film.film_id = inventory.film_id
-                        join rental on inventory.inventory_id = rental.inventory_id
-                        join customer on rental.customer_id = customer.customer_id
-                        full outer join address on customer.address_id = address.address_id
-                        join city on address.city_id = city.city_id
-                        group by category.name) as t )
-or
-    t.hours_minus = (select max(hours_minus) as max_for_minus from(select category.name,
-                        sum(film.rental_duration) filter (where city.city like '%-%') as hours_minus
-                        from film
-                        join film_category on film.film_id = film_category.film_id
-                        join category on film_category.category_id = category.category_id
-                        join inventory on film.film_id = inventory.film_id
-                        join rental on inventory.inventory_id = rental.inventory_id
-                        join customer on rental.customer_id = customer.customer_id
-                        full outer join address on customer.address_id = address.address_id
-                        join city on address.city_id = city.city_id
-                        group by category.name) as t
-                        );
+group by category.name)
+select name  from t
+where hours_a = (select max(hours_a) from t) or hours_minus = (select max(hours_minus) from t);
