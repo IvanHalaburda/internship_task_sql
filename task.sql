@@ -12,9 +12,11 @@ order by number desc;
 -- 2. вывести 10 актеров, чьи фильмы большего всего арендовали, отсортировать по убыванию.
 --
 
-select (select concat(actor.first_name, ' ', actor.last_name) as name from actor where actor.actor_id = film_actor.actor_id) , count(inventory.inventory_id) as number from inventory
-join film_actor on inventory.film_id = film_actor.film_id
-group by film_actor.actor_id
+select concat(first_name,' ',last_name) as actor_name, count(last_name)  as number from film
+join film_actor on film.film_id = film_actor.film_id
+join actor on film_actor.actor_id = actor.actor_id
+join inventory on film.film_id = inventory.film_id
+group by actor_name
 order by number desc
 limit 10;
 
